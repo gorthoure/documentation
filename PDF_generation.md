@@ -40,39 +40,39 @@
 
 ### Диаграмма последовательности
 
-@startuml
-actor Admin
-participant API
-participant BillingService
-participant DataLayer
-participant PdfService
-participant Storage
+```mermaid
+sequenceDiagram
+    actor Admin
+    participant API
+    participant BillingService
+    participant DataLayer
+    participant PdfService
+    participant Storage
 
-Admin -> API : POST /pdf/group
-API -> BillingService : generateGroupReport()
+    Admin->>API: POST /pdf/group
+    API->>BillingService: generateGroupReport()
 
-BillingService -> DataLayer : getDevices()
-DataLayer --> BillingService : devices[]
+    BillingService->>DataLayer: getDevices(group_id)
+    DataLayer-->>BillingService: devices[]
 
-loop for each device
-    BillingService -> DataLayer : getReadings()
-    DataLayer --> BillingService : readings
+    loop for each device
+        BillingService->>DataLayer: getReadings(period)
+        DataLayer-->>BillingService: readings
 
-    BillingService -> DataLayer : getTariff()
-    DataLayer --> BillingService : tariff
+        BillingService->>DataLayer: getTariff(period)
+        DataLayer-->>BillingService: tariff
 
-    BillingService -> BillingService : calculateConsumption()
-    BillingService -> BillingService : calculateAmount()
+        BillingService->>BillingService: calculateConsumption()
+        BillingService->>BillingService: calculateAmount()
 
-    BillingService -> PdfService : createPdf()
-    PdfService -> Storage : save()
-    Storage --> PdfService : file_url
-end
+        BillingService->>PdfService: createPdf(data)
+        PdfService->>Storage: save(file)
+        Storage-->>PdfService: file_url
+    end
 
-BillingService --> API : file_url[]
-API --> Admin : 200 OK
-@enduml
-
+    BillingService-->>API: file_url[]
+    API-->>Admin: 200 OK
+```
 
 ---
 
@@ -103,38 +103,60 @@ API --> Admin : 200 OK
 
 ### Диаграмма последовательности
 
-@startuml
-actor User
-participant API
-participant BillingService
-participant DataLayer
-participant PdfService
-participant Storage
+```mermaid
+sequenceDiagram
+    actor User
+    participant API
+    participant BillingService
+    participant DataLayer
+    participant PdfService
+    participant Storage
 
-User -> API : POST /pdf/counter
-API -> BillingService : generateCounterReport()
+    User->>API: POST /pdf/counter
+    API->>BillingService: generateCounterReport()
 
-BillingService -> DataLayer : getDevice()
-DataLayer --> BillingService : device
+    BillingService->>DataLayer: getDevice(eui)
+    DataLayer-->>BillingService: device
 
-BillingService -> DataLayer : getReadings()
-DataLayer --> BillingService : readings
+    BillingService->>DataLayer: getReadings(period)
+    DataLayer-->>BillingService: readings
 
-BillingService -> DataLayer : getTariff()
-DataLayer --> BillingService : tariff
+    BillingService->>DataLayer: getTariff(period)
+    DataLayer-->>BillingService: tariff
 
-BillingService -> BillingService : calculateConsumption()
-BillingService -> BillingService : calculateAmount()
+    BillingService->>BillingService: calculateConsumption()
+    BillingService->>BillingService: calculateAmount()
 
-BillingService -> PdfService : createPdf()
-PdfService -> Storage : save()
-Storage --> PdfService : file_url
+    BillingService->>PdfService: createPdf(data)
+    PdfService->>Storage: save(file)
+    Storage-->>PdfService: file_url
 
-BillingService --> API : file_url
-API --> User : 200 OK
-@enduml
+    BillingService-->>API: file_url
+    API-->>User: 200 OK
+```
 
-# Обработка ошибок
+
+## Формат ответа
+
+### Успешный ответ:
+
+```json
+{
+  "status": "success",
+  "file_url": "https://storage.example.com/file.pdf"
+}
+```
+
+### Ответ при ошибке:
+
+```json
+{
+  "status": "error",
+  "code": "PDF_GENERATION_FAILED",
+  "message": "Ошибка генерации PDF"
+}
+```
+
 
 ## Возможные ошибки
 
@@ -146,20 +168,7 @@ API --> User : 200 OK
 | PDF_GENERATION_FAILED | Ошибка генерации PDF    |
 | STORAGE_ERROR         | Ошибка сохранения файла |
 
-## Диаграмма обработки ошибки
-
-@startuml
-participant API
-participant BillingService
-participant PdfService
-
-API -> BillingService : generateReport()
-BillingService -> PdfService : createPdf()
-PdfService --> BillingService : error
-
-BillingService --> API : PDF_GENERATION_FAILED
-API --> Client : 500 Internal Server Error
-@enduml
+---
 
 # Нефункциональные требования
 
@@ -184,32 +193,11 @@ API --> Client : 500 Internal Server Error
 * Должна обеспечиваться уникальность имён файлов.
 * Должна быть предусмотрена возможность последующего удаления или архивации.
 
-# Требования к API
+---
 
-## Формат ответа
-
-### Успешный ответ:
-
-```json
-{
-  "status": "success",
-  "file_url": "https://storage.example.com/file.pdf"
-}
-```
-
-### Ответ при ошибке:
-
-```json
-{
-  "status": "error",
-  "code": "PDF_GENERATION_FAILED",
-  "message": "Ошибка генерации PDF"
-}
-```
 
 # Ограничения и допущения
 
 * Период расчёта определяется на основе входных параметров.
 * Тариф считается неизменным в пределах расчётного периода.
-
 * Система не выполняет финансовую агрегацию по нескольким периодам.
