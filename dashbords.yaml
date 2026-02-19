@@ -1,0 +1,389 @@
+openapi: 3.0.3
+info:
+  title: SNT Counters Management API
+  version: 1.0.0
+  description: API системы учета показаний счетчиков СНТ
+
+servers:
+  - url: https://api.example.com
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Grouping
+  - name: Tariffs
+  - name: Widgets
+  - name: Charts
+  - name: Reports
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  # =========================
+  # ====== SCHEMAS ==========
+  # =========================
+  schemas:
+
+    # --- Common ---
+    SuccessFlag:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+          example: true
+
+    ErrorResponse:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: Validation error
+
+    # --- Grouping ---
+    Grouping:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Центральная улица
+
+    GroupingListResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Grouping"
+
+    GroupingDevice:
+      type: object
+      required: [device_id]
+      properties:
+        device_id:
+          type: integer
+          example: 101
+
+    GroupingDevicesResponse:
+      type: object
+      required: [success, grouping, devices]
+      properties:
+        success:
+          type: boolean
+        grouping:
+          $ref: "#/components/schemas/Grouping"
+        devices:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroupingDevice"
+
+    DeviceWithGroups:
+      type: object
+      required: [device_id, eui, parcel, owner_id, groupings]
+      properties:
+        device_id:
+          type: integer
+        eui:
+          type: string
+        parcel:
+          type: integer
+        owner_id:
+          type: integer
+        groupings:
+          type: array
+          items:
+            type: object
+            required: [grouping_id, grouping_name]
+            properties:
+              grouping_id:
+                type: integer
+              grouping_name:
+                type: string
+
+    AllDevicesForGroupingResponse:
+      type: object
+      required: [success, devices]
+      properties:
+        success:
+          type: boolean
+        devices:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeviceWithGroups"
+
+    # --- Tariffs ---
+    Tariff:
+      type: object
+      required:
+        - id
+        - tariff_electricity_day
+        - tariff_electricity_night
+        - active_from
+      properties:
+        id:
+          type: integer
+        tariff_electricity_day:
+          type: number
+          format: float
+        tariff_electricity_night:
+          type: number
+          format: float
+        active_from:
+          type: string
+          format: date
+
+    TariffUpdateResponse:
+      type: object
+      required: [success, message, tariff]
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        tariff:
+          $ref: "#/components/schemas/Tariff"
+
+    # --- Widgets ---
+    WidgetReading:
+      type: object
+      required:
+        - device_id
+        - eui
+        - plot_number
+        - indication_day
+        - indication_night
+        - date
+        - consumption
+        - unit
+      properties:
+        device_id:
+          type: integer
+        eui:
+          type: string
+        plot_number:
+          type: string
+        indication_day:
+          type: number
+        indication_night:
+          type: number
+        date:
+          type: string
+          format: date
+        consumption:
+          type: number
+        unit:
+          type: string
+          example: кВт·ч
+
+    WidgetComparison:
+      type: object
+      required:
+        - device_id
+        - consumption
+        - snt_average_consumption
+        - period
+        - comparison
+      properties:
+        device_id:
+          type: integer
+        consumption:
+          type: number
+        snt_average_consumption:
+          type: number
+        period:
+          type: string
+        comparison:
+          type: string
+
+    WidgetsResponse:
+      type: object
+      required: [success, readings, comparisons]
+      properties:
+        success:
+          type: boolean
+        readings:
+          type: array
+          items:
+            $ref: "#/components/schemas/WidgetReading"
+        comparisons:
+          type: array
+          items:
+            $ref: "#/components/schemas/WidgetComparison"
+
+    # --- Charts ---
+    ChartDataset:
+      type: object
+      required: [label, data]
+      properties:
+        label:
+          type: string
+        data:
+          type: array
+          items:
+            type: number
+
+    ChartData:
+      type: object
+      required: [labels, datasets]
+      properties:
+        labels:
+          type: array
+          items:
+            type: string
+        datasets:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChartDataset"
+
+    ChartSummary:
+      type: object
+      required: [total_consumption, average_consumption, total_cost]
+      properties:
+        total_consumption:
+          type: number
+        average_consumption:
+          type: number
+        total_cost:
+          type: number
+
+    ChartGroupResponse:
+      type: object
+      required: [success, period, date, unit, data, summary]
+      properties:
+        success:
+          type: boolean
+        period:
+          type: string
+        date:
+          type: string
+        unit:
+          type: string
+        data:
+          $ref: "#/components/schemas/ChartData"
+        summary:
+          $ref: "#/components/schemas/ChartSummary"
+
+    # --- Reports ---
+    ReportDevice:
+      type: object
+      required:
+        - device_id
+        - eui
+        - plot_number
+        - owner_name
+        - device_type
+        - indication
+        - consumption
+        - cost
+        - tariff
+      properties:
+        device_id:
+          type: integer
+        eui:
+          type: string
+        plot_number:
+          type: string
+        owner_name:
+          type: string
+        device_type:
+          type: string
+          enum: [automatic, manual]
+        indication:
+          type: object
+          required: [day, night]
+          properties:
+            day:
+              type: number
+            night:
+              type: number
+        consumption:
+          type: object
+          required: [day, night, total]
+          properties:
+            day:
+              type: number
+            night:
+              type: number
+            total:
+              type: number
+        cost:
+          type: object
+          required: [day, night, total]
+          properties:
+            day:
+              type: number
+            night:
+              type: number
+            total:
+              type: number
+        tariff:
+          type: object
+          required: [day_rate, night_rate]
+          properties:
+            day_rate:
+              type: number
+            night_rate:
+              type: number
+
+    ReportsResponse:
+      type: object
+      required: [success, period, filters, data, summary]
+      properties:
+        success:
+          type: boolean
+        period:
+          type: object
+          required: [start_date, end_date, days_count]
+          properties:
+            start_date:
+              type: string
+              format: date
+            end_date:
+              type: string
+              format: date
+            days_count:
+              type: integer
+        filters:
+          type: object
+          required: [user_only, total_devices]
+          properties:
+            user_only:
+              type: boolean
+            total_devices:
+              type: integer
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportDevice"
+        summary:
+          type: object
+          required:
+            - total_consumption
+            - total_cost
+            - average_consumption_per_device
+            - average_cost_per_device
+          properties:
+            total_consumption:
+              type: number
+            total_cost:
+              type: number
+            average_consumption_per_device:
+              type: number
+            average_cost_per_device:
+              type: number
