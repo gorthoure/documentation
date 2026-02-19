@@ -1,0 +1,421 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Amediateka Content Backend API",
+    "version": "2.1.0",
+    "description": "Backend API для сбора и мониторинга контента Амедиатеки (регион TJ)"
+  },
+  "servers": [
+    {
+      "url": "https://api.your-domain.com/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "PRIVATEKEY"
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "required": ["success"],
+        "properties": {
+          "success": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["success", "error_code", "message"],
+        "properties": {
+          "success": { "type": "boolean" },
+          "error_code": {
+            "type": "string",
+            "enum": ["404", "403", "500", "TIMEOUT", "VALIDATION_ERROR"]
+          },
+          "message": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "Studio": {
+        "type": "object",
+        "required": ["id", "amedia_id", "studio_name"],
+        "properties": {
+          "id": { "type": "integer" },
+          "amedia_id": { "type": "integer" },
+          "studio_name": { "type": "string" },
+          "description": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "Country": {
+        "type": "object",
+        "required": ["id", "amedia_id", "country_name"],
+        "properties": {
+          "id": { "type": "integer" },
+          "amedia_id": { "type": "integer" },
+          "country_name": { "type": "string" },
+          "country_code": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2
+          }
+        },
+        "additionalProperties": false
+      },
+      "Genre": {
+        "type": "object",
+        "required": ["id", "amedia_id", "genre_name", "category"],
+        "properties": {
+          "id": { "type": "integer" },
+          "amedia_id": { "type": "integer" },
+          "genre_name": { "type": "string" },
+          "category": {
+            "type": "string",
+            "enum": ["movie", "series"]
+          }
+        },
+        "additionalProperties": false
+      },
+      "Rating": {
+        "type": "object",
+        "required": ["kinopoisk", "imdb", "amedia"],
+        "properties": {
+          "kinopoisk": { "type": "number" },
+          "imdb": { "type": "number" },
+          "amedia": { "type": "number" }
+        },
+        "additionalProperties": false
+      },
+      "Person": {
+        "type": "object",
+        "required": ["id", "name", "type"],
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["director", "actor", "producer", "writer", "other"]
+          },
+          "role": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "FilmMetadata": {
+        "type": "object",
+        "required": [
+          "film_id",
+          "film_name",
+          "film_name_original",
+          "year",
+          "age_rating",
+          "is_serial",
+          "right_end_date"
+        ],
+        "properties": {
+          "film_id": { "type": "integer" },
+          "film_name": { "type": "string" },
+          "film_name_original": { "type": "string" },
+          "year": { "type": "integer" },
+          "age_rating": { "type": "string" },
+          "description": { "type": "string" },
+          "is_serial": { "type": "boolean" },
+          "ratings": { "$ref": "#/components/schemas/Rating" },
+          "trailer": {
+            "type": ["string", "null"]
+          },
+          "right_end_date": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FilmRelations": {
+        "type": "object",
+        "required": ["genres", "countries", "studios", "persons"],
+        "properties": {
+          "genres": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Genre" }
+          },
+          "countries": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Country" }
+          },
+          "studios": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Studio" }
+          },
+          "persons": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Person" }
+          }
+        },
+        "additionalProperties": false
+      },
+      "FilmFullResponse": {
+        "type": "object",
+        "required": ["success", "metadata", "relations"],
+        "properties": {
+          "success": { "type": "boolean" },
+          "metadata": { "$ref": "#/components/schemas/FilmMetadata" },
+          "relations": { "$ref": "#/components/schemas/FilmRelations" }
+        },
+        "additionalProperties": false
+      },
+      "Season": {
+        "type": "object",
+        "required": [
+          "season_id",
+          "film_id",
+          "season_number",
+          "right_end_date"
+        ],
+        "properties": {
+          "season_id": { "type": "integer" },
+          "film_id": { "type": "integer" },
+          "season_number": { "type": "integer" },
+          "title": { "type": "string" },
+          "season_info": { "type": "string" },
+          "right_end_date": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SerialFullResponse": {
+        "type": "object",
+        "required": ["success", "metadata", "seasons"],
+        "properties": {
+          "success": { "type": "boolean" },
+          "metadata": { "$ref": "#/components/schemas/FilmMetadata" },
+          "seasons": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Season" }
+          }
+        },
+        "additionalProperties": false
+      },
+      "MonitoringResult": {
+        "type": "object",
+        "required": ["content_id", "content_type", "status", "checked_at"],
+        "properties": {
+          "content_id": { "type": "integer" },
+          "content_type": {
+            "type": "string",
+            "enum": ["film", "season", "trailer"]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "AVAILABLE",
+              "NOT_AVAILABLE_TJ",
+              "RIGHTS_EXPIRED",
+              "API_ERROR"
+            ]
+          },
+          "right_end_date": {
+            "type": ["string", "null"],
+            "format": "date"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MonitoringBatchResponse": {
+        "type": "object",
+        "required": ["success", "total_checked", "unavailable", "results"],
+        "properties": {
+          "success": { "type": "boolean" },
+          "total_checked": { "type": "integer" },
+          "unavailable": { "type": "integer" },
+          "results": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MonitoringResult" }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "paths": {
+    "/dictionaries/studios": {
+      "get": {
+        "summary": "Получить список студий",
+        "responses": {
+          "200": {
+            "description": "Список студий",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Studio" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dictionaries/countries": {
+      "get": {
+        "summary": "Получить список стран",
+        "responses": {
+          "200": {
+            "description": "Список стран",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Country" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dictionaries/genres": {
+      "get": {
+        "summary": "Получить список жанров",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["movie", "series"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список жанров",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Genre" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/content/films/{film_id}": {
+      "get": {
+        "summary": "Получить полный фильм",
+        "parameters": [
+          {
+            "name": "film_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Полные данные фильма",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FilmFullResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/content/serials/{film_id}": {
+      "get": {
+        "summary": "Получить сериал с сезонами",
+        "parameters": [
+          {
+            "name": "film_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Полные данные сериала",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SerialFullResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitoring/check-films": {
+      "post": {
+        "summary": "Проверка фильмов и сериалов",
+        "responses": {
+          "200": {
+            "description": "Результаты проверки",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoringBatchResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitoring/check-seasons": {
+      "post": {
+        "summary": "Проверка сезонов",
+        "responses": {
+          "200": {
+            "description": "Результаты проверки",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoringBatchResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitoring/check-trailers": {
+      "post": {
+        "summary": "Проверка трейлеров",
+        "responses": {
+          "200": {
+            "description": "Результаты проверки",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitoringBatchResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
