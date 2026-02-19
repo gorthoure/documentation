@@ -56,13 +56,13 @@ sequenceDiagram
     DataLayer-->>BillingService: devices[]
 
     loop for each device
-        BillingService->>DataLayer: getReadings(period)
-        DataLayer-->>BillingService: readings
+        BillingService->>DataLayer: getConsumption(period)
+        DataLayer-->>BillingService: consumption
 
         BillingService->>DataLayer: getTariff(period)
         DataLayer-->>BillingService: tariff
 
-        BillingService->>BillingService: calculateConsumption()
+        BillingService->>BillingService: calculateConsumptionSumm()
         BillingService->>BillingService: calculateAmount()
 
         BillingService->>PdfService: createPdf(data)
@@ -118,13 +118,13 @@ sequenceDiagram
     BillingService->>DataLayer: getDevice(eui)
     DataLayer-->>BillingService: device
 
-    BillingService->>DataLayer: getReadings(period)
-    DataLayer-->>BillingService: readings
+    BillingService->>DataLayer: getConsumption(period)
+    DataLayer-->>BillingService: consumption
 
     BillingService->>DataLayer: getTariff(period)
     DataLayer-->>BillingService: tariff
 
-    BillingService->>BillingService: calculateConsumption()
+    BillingService->>BillingService: calculateConsumptionSumm()
     BillingService->>BillingService: calculateAmount()
 
     BillingService->>PdfService: createPdf(data)
@@ -201,3 +201,4 @@ sequenceDiagram
 * Период расчёта определяется на основе входных параметров.
 * Тариф считается неизменным в пределах расчётного периода.
 * Система не выполняет финансовую агрегацию по нескольким периодам.
+
